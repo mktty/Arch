@@ -1,0 +1,127 @@
+#!/bin/bash
+#TAG:UEFI+GPT
+#Description: Auto install Archlinux.
+#Welcome. This file only test on VMware which firmware can NOT detect by GRUB
+#For some detail please notice
+#https://wiki.archlinux.org/index.php/Beginners%27_Guide#For_UEFI_motherboards
+
+cat << EOF
++------------------------------------------------------------------------------------+
+|                        === Welcome to Archlinux install  ===                       |
++--------------------------   http://wiki.archlinux.org  ----------------------------+
+
+EOF
+
+#Partition Disk
+disk=/dev/sda
+sgdisk --zap-all $disk  #erase partition table
+sgdisk -og $disk
+#FOR GPT-EFI
+sgdisk -n 1:2048:1050623	-c 1:"boot" -t 1:8300 $disk	#EFI 512MB
+sgdisk -n 2:1050624:5244927	-c 2:"swap" -t 2:8200 $disk	#Swap 2G	
+sgdisk -n 3:5244928:26216447	-c 3:"root" -t 3:8300 $disk	#10G
+END=`sgdisk -E $disk`
+sgdisk -n 4:26216448:$END	-c 4:"home" -t 4:8300 $disk	#rest
+
+#Activate swap
+mkswap /dev/sda2
+swapon /dev/sda2
+
+#Create filesystems
+#mkfs.ext4 /dev/sda3 > /dev/null 2>&1
+#mkfs.ext4 /dev/sda4 > /dev/null 2>&1
+mkfs.vfat -F32 /dev/sda1 >&/dev/null 
+for partnum in {3,4}; do
+    mkfs.ext4 /dev/sda${partnum}
+done
+
+#Mount the partitions
+mount /dev/sda3 /mnt
+mkdir -p /mnt/{boot/efi,home}
+mount /dev/sda1 /mnt/boot/efi
+mount /dev/sda4 /mnt/home
+
+
+#Select mirrors list from Archlinux official website
+URL="https://www.archlinux.org/mirrorlist/?country=CN&protocol=http&ip_version=4"
+wget -O /tmp/mirrorlst $URL
+mv /tmp/mirrorlst /etc/pacman.d/mirrorlist
+sed -i '/Server/s/#\(Server\)/\1/g' /etc/pacman.d/mirrorlist 
+if [ $? -eq 0 ]
+then
+    echo "OK"
+else
+    echo "Failed" && exit 2
+fi
+
+#Install the base system and develop-packages
+pacstrap /mnt base base-devel vim  --noconfirm
+
+#Generate File fstab
+genfstab -U -p /mnt >> /mnt/etc/fstab
+
+#Chroot and configure the base system
+arch-chroot /mnt /bin/bash << EOF
+
+#Set locale
+sed -i -e "s/^#en_US/en_US/g;s/^#zh_CN/zh_CN/g" /etc/locale.gen
+locale-gen
+
+#Set Time-zone
+ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime
+
+#Set Hardware clock
+hwclock  -systohc  --utc
+
+#Hostname
+echo BreakingBad > /etc/hostname
+
+#Grub EFI
+#--------------------EFI-------------------------------
+#mount -t efivarfs efivarfs /sys/firmware/efi/efivars
+pacman -S grub efibootmgr dosfstools --noconfirm
+#UEFI system (Recommended installation method)
+esp=/boot/efi
+grub-install --target=x86_64-efi --efi-directory=$esp --bootloader-id=arch_grub --recheck --debug
+mkdir $esp/EFI/boot
+cp $esp/EFI/arch_grub/grubx64.efi  $esp/EFI/boot/bootx64.efi
+#Alternative method
+#grub-install --target=x86_64-efi --efi-directory=$esp --bootloader-id=grub  --boot-directory=$esp  --recheck  --debug
+#grub-mkconfig -o $esp/EFI/grub/grub.cfg
+grub-mkconfig -o /boot/grub/grub.cfg
+# set root password to "root"
+echo root:azer | chpasswd
+
+#Add an new user
+groupadd mvp
+useradd --create-home  --gid mvp --groups "audio,video,lp,wheel,power,storage,optical,network,log" --shell /bin/bash mkttys
+echo mkttys:123 | chpasswd
+
+cat >/etc/issue<<ABC
+
+
+
+
+        For what it's worth, it's never too late, or in my case, too early, to be whoever you want to be.
+        There's no time limit, stop whenever you want.
+        You can change or stay the same.
+        There's no rules to this thing.
+        We can make the best or the worst of it.
+        I hope you make the best of it.
+        I hope you see things that startle you.
+        I hope you feel things you never felt before.
+        I hope you meet people with a different point of view.
+        I hope you live a life you're proud of.
+        If you find that you are not,
+        I hope you have the strength to start all over again.
+
+
+ABC
+pacman -Syu openssh  --noconfirm
+systemctl enable dhcpcd.service
+systemctl enable sshd.service
+EOF
+
+#Unmount the partitions and reboot
+umount -R /mnt
+reboot

@@ -90,7 +90,7 @@ cp $esp/EFI/arch_grub/grubx64.efi  $esp/EFI/boot/bootx64.efi
 #grub-mkconfig -o $esp/EFI/grub/grub.cfg
 grub-mkconfig -o /boot/grub/grub.cfg
 # set root password to "root"
-echo root:azer | chpasswd
+echo root:aabc | chpasswd
 
 #Add an new user
 groupadd mvp

@@ -1,0 +1,63 @@
+!Disable MOUSE  
+URxvt.preeditType:Root 
+ 
+!!input method
+!URxvt.inputMethod:fcitx 
+
+!!Title
+URxvt.title:rxvt-unicode  
+
+!!True transparency 
+URxvt.foreground: white 
+URxvt.depth: 32
+URxvt.background: rgba:0000/0000/0000/dddd
+
+!Clickable URLs
+URxvt.perl-ext-common: default,matcher,tabbed
+URxvt.urlLauncher:chromium  
+URxvt.matcher.button:1  
+
+!!Simple tabs 
+URxvt.tabbed.tab-fg: 10  
+URxvt.tabbed.tab-bg: 0  
+URxvt.tabbed.tabbar-fg: 5  
+
+!!Scrollbar
+URxvt.scrollBar:False  
+
+!!cursor 
+URxvt.cursorBlink:True  
+
+!!Border  
+URxvt.borderLess:False  
+
+!!Fonts  
+Xft.dpi:96  
+URxvt.font:xft:Source code pro:size=13:style=Regular:antialias=true,xft:Source code pro:size=13  
+URxvt.boldfont:xft:Source code pro:size=13:style=Regular:antialias=true:Bold,xft:Source code pro:size=13  
+  
+!!Reset color  
+!Black  
+URxvt.color0:  #000000  
+URxvt.color8:  #555753  
+!Red  
+URxvt.color1:  #CC0000  
+URxvt.color9:  #EF2929  
+!Green  
+URxvt.color2:  #4E9A06  
+URxvt.color10: #8AE234  
+!Yellow  
+URxvt.color3:  #C4A000  
+URxvt.color11: #FCE94F  
+!Blue  
+URxvt.color4:  #3465A4  
+URxvt.color12: #729FCF  
+!Magenta  
+URxvt.color5:  #75507B  
+URxvt.color13: #AD7FA8  
+!Cyan  
+URxvt.color6:  #06989A  
+URxvt.color14: #34E2E2  
+!White  
+URxvt.color7:  #D3D7CF  
+URxvt.color15: #EEEEEC
